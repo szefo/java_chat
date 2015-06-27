@@ -3,10 +3,10 @@ package com.szefo.server;
 
 import java.io.Serializable;
 
-public class Message implements Serializable{
+public class Message implements Serializable {
 
+    private static final long serialVersionUID = 1;
     private String sender, recipient, content, type;
-
 
     public Message(String sender, String recipient, String content, String type) {
         this.sender = sender;
