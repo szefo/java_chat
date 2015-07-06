@@ -6,14 +6,16 @@ import java.awt.event.ActionEvent;
 
 public class ServerFrame extends JFrame {
 
+    // TODO
     private final String filePath = "";
+
     private JButton jBstart, jBbrowse;
     private JScrollPane jScrollPane;
     private JTextArea jTextArea;
     private JTextField jTextField;
     private JLabel jLabel;
     private JFileChooser jFileChooser;
-    private SocketServer socketServer;
+    private ServerSocketImpl serverSocketImpl;
     private Thread serverThread;
 
     public ServerFrame() {
@@ -23,7 +25,6 @@ public class ServerFrame extends JFrame {
     }
 
     public static void main(String[] args) {
-
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException e) {
@@ -37,6 +38,10 @@ public class ServerFrame extends JFrame {
         }
 
         EventQueue.invokeLater(() -> new ServerFrame().setVisible(true));
+    }
+
+    public JTextArea getjTextArea() {
+        return jTextArea;
     }
 
     private void initComponents() {
@@ -108,4 +113,13 @@ public class ServerFrame extends JFrame {
     private void jbBrowse(ActionEvent e) {
     }
 
+    /**
+     * restart thread
+     */
+    public void retryStart(int port) {
+        if (serverSocketImpl != null) {
+            serverSocketImpl.stop();
+            serverSocketImpl = new ServerSocketImpl(this, port);
+        }
+    }
 }
