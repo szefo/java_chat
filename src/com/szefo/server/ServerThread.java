@@ -1,6 +1,8 @@
 package com.szefo.server;
 
 
+import com.szefo.Message;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -14,8 +16,7 @@ public class ServerThread extends Thread {
     private ServerFrame gui;
     private ServerSocketImpl serverSocketImpl = null;
     private int id = -1;
-    private String username;
-
+    private volatile boolean running = true;
 
     public ServerThread(Socket connection, ServerSocketImpl serverSocketImpl) {
         super();
@@ -29,10 +30,14 @@ public class ServerThread extends Thread {
         return id;
     }
 
+    public Socket getConnection() {
+        return connection;
+    }
+
     @SuppressWarnings("deprecation")
     public void run() {
         gui.getjTextArea().append("\nServer Thread " + id + " running");
-        while (true) {
+        while (running) {
             try {
                 Message msg = (Message) input.readObject();
                 serverSocketImpl.handle(id, msg);
@@ -71,6 +76,10 @@ public class ServerThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void terminate(){
+        running = false;
     }
 
 }

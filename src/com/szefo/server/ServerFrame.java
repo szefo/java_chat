@@ -3,11 +3,11 @@ package com.szefo.server;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 public class ServerFrame extends JFrame {
 
-    // TODO
-    private final String filePath = "";
+    private String filePath = "/home/szefo/Documents/projekty/JavaChat/Data.xml";
 
     private JButton jBstart, jBbrowse;
     private JScrollPane jScrollPane;
@@ -16,7 +16,6 @@ public class ServerFrame extends JFrame {
     private JLabel jLabel;
     private JFileChooser jFileChooser;
     private ServerSocketImpl serverSocketImpl;
-    private Thread serverThread;
 
     public ServerFrame() {
         setDefaultCloseOperation(3);
@@ -42,6 +41,9 @@ public class ServerFrame extends JFrame {
 
     public JTextArea getjTextArea() {
         return jTextArea;
+    }
+    public String getFilePath() {
+        return filePath;
     }
 
     private void initComponents() {
@@ -107,15 +109,23 @@ public class ServerFrame extends JFrame {
 
 
     private void jbStart(ActionEvent e) {
+        serverSocketImpl = new ServerSocketImpl(this);
+        jBstart.setEnabled(false);
+        jBbrowse.setEnabled(false);
     }
 
 
     private void jbBrowse(ActionEvent e) {
+        jFileChooser.showDialog(this, "Select");
+        File file = jFileChooser.getSelectedFile();
+
+        if (file != null) {
+            filePath = file.getPath();
+            jTextField.setText(filePath);
+            jBstart.setEnabled(true);
+        }
     }
 
-    /**
-     * restart thread
-     */
     public void retryStart(int port) {
         if (serverSocketImpl != null) {
             serverSocketImpl.stop();

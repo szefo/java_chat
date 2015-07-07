@@ -1,4 +1,4 @@
-package com.szefo.server;
+package com.szefo;
 
 
 import java.io.Serializable;
@@ -8,7 +8,7 @@ public class Message implements Serializable {
     private static final long serialVersionUID = 1;
     private String sender, recipient, content, type;
 
-    public Message(String sender, String recipient, String content, String type) {
+    public Message(String type, String sender, String content, String recipient) {
         this.sender = sender;
         this.recipient = recipient;
         this.content = content;
