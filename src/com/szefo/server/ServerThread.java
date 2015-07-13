@@ -34,7 +34,7 @@ public class ServerThread extends Thread {
         return connection;
     }
 
-    @SuppressWarnings("deprecation")
+
     public void run() {
         gui.getjTextArea().append("\nServer Thread " + id + " running");
         while (running) {
@@ -44,7 +44,7 @@ public class ServerThread extends Thread {
             } catch (Exception e) {
                 System.out.println(id + " Error reading : " + e.getMessage());
                 serverSocketImpl.remove(id);
-                stop();
+                terminate();
             }
         }
     }

@@ -42,12 +42,12 @@ public class ServerFrame extends JFrame {
     public JTextArea getjTextArea() {
         return jTextArea;
     }
+
     public String getFilePath() {
         return filePath;
     }
 
     private void initComponents() {
-
         jFileChooser = new JFileChooser();
 
         jTextField = new JTextField();
@@ -66,11 +66,14 @@ public class ServerFrame extends JFrame {
             jbBrowse(e);
         });
 
-
         jTextArea = new JTextArea(20, 5);
         jTextArea.setEditable(false);
         jScrollPane = new JScrollPane(jTextArea);
 
+        setLayout();
+    }
+
+    private void setLayout(){
         GroupLayout layout = new GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
 
@@ -107,13 +110,11 @@ public class ServerFrame extends JFrame {
         pack();
     }
 
-
     private void jbStart(ActionEvent e) {
         serverSocketImpl = new ServerSocketImpl(this);
         jBstart.setEnabled(false);
         jBbrowse.setEnabled(false);
     }
-
 
     private void jbBrowse(ActionEvent e) {
         jFileChooser.showDialog(this, "Select");

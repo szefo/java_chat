@@ -7,13 +7,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.List;
 
 public class ServerSocketImpl implements Runnable {
 
     private int port = 1234;
-    private List<ServerThread> threads = null;
+    private ServerThread[] threads = null;
     private ServerSocket serverSocket = null;
     private Thread thread = null;
     private int clientCount = 0;
@@ -21,9 +19,8 @@ public class ServerSocketImpl implements Runnable {
     private DatabaseXml db;
     private volatile boolean running = true;
 
-
     public ServerSocketImpl(ServerFrame frame) {
-        threads = new LinkedList<>();
+        threads = new ServerThread[50];
         this.gui = frame;
 
         db = new DatabaseXml(gui.getFilePath());
@@ -42,7 +39,7 @@ public class ServerSocketImpl implements Runnable {
     }
 
     public ServerSocketImpl(ServerFrame serverFrame, int port) {
-        threads = new LinkedList<>();
+        threads = new ServerThread[50];
         this.gui = serverFrame;
         this.port = port;
 
@@ -71,7 +68,6 @@ public class ServerSocketImpl implements Runnable {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void stop() {
         if (thread != null) {
             terminate();
@@ -79,14 +75,6 @@ public class ServerSocketImpl implements Runnable {
         }
     }
 
-    private int findClient(int id) {
-        for (int i = 0; i < clientCount; i++) {
-            if (threads.get(i).getID() == id) {
-                return id;
-            }
-        }
-        return -1;
-    }
 
     public synchronized void handle(int id, Message msg) {
         if (msg.getContent().equals(".bye")) {
@@ -96,8 +84,8 @@ public class ServerSocketImpl implements Runnable {
             if (msg.getType().equals("login")) {
                 if (findUserThread(msg.getSender()) == null) {
                     if (db.checkLogin(msg.getSender(), msg.getContent())) {
-                        threads.get(findClient(id)).setName(msg.getSender());
-                        threads.get(findClient(id)).send(new Message("login", "SERVER", "TRUE", msg.getSender()));
+                        threads[(findClient(id))].setName(msg.getSender());
+                        threads[(findClient(id))].send(new Message("login", "SERVER", "TRUE", msg.getSender()));
                         announce("newuser", "SERVER", msg.getSender());
                         sendUserList(msg.getSender());
                     }
@@ -108,34 +96,34 @@ public class ServerSocketImpl implements Runnable {
                 } else {
                     findUserThread(msg.getRecipient()).send(
                             new Message(msg.getType(), msg.getSender(), msg.getContent(), msg.getRecipient()));
-                    threads.get(id).send(
+                    threads[findClient(id)].send(
                             new Message(msg.getType(), msg.getSender(), msg.getContent(), msg.getRecipient()));
                 }
             } else if (msg.getType().equals("test")) {
-                threads.get(id).send(
+                threads[findClient(id)].send(
                         new Message(msg.getType(), msg.getSender(), msg.getContent(), msg.getRecipient()));
             } else if (msg.getType().equals("signup")) {
                 if (findUserThread(msg.getSender()) == null) {
                     if (!db.userExists(msg.getSender())) {
                         db.addUser(msg.getSender(), msg.getContent());
-                        threads.get(findClient(id)).setName(msg.getSender());
-                        threads.get(findClient(id)).send(
+                        threads[findClient(id)].setName(msg.getSender());
+                        threads[findClient(id)].send(
                                 new Message("signup", "SERVER", "TRUE", msg.getSender()));
-                        threads.get(findClient(id)).send(
+                        threads[findClient(id)].send(
                                 new Message("login", "SERVER", "TRUE", msg.getSender()));
                         announce("newuser", "SERVER", msg.getSender());
                         sendUserList(msg.getSender());
                     } else {
-                        threads.get(findClient(id)).send(
+                        threads[findClient(id)].send(
                                 new Message("signup", "SERVER", "FALSE", msg.getSender()));
                     }
                 } else {
-                    threads.get(findClient(id)).send(
+                    threads[findClient(id)].send(
                             new Message("signup", "SERVER", "FALSE", msg.getSender()));
                 }
             } else if (msg.getType().equals("upload_req")) {
                 if (msg.getRecipient().equals("All")) {
-                    threads.get(findClient(id)).send(
+                    threads[findClient(id)].send(
                             new Message("message", "SERVER", "Upload to 'All' forbiden", msg.getSender()));
                 } else {
                     findUserThread(msg.getRecipient()).send(
@@ -162,25 +150,39 @@ public class ServerSocketImpl implements Runnable {
 
     public void sendUserList(String toWhom) {
         for (int i = 0; i < clientCount; i++) {
-            findUserThread(toWhom).send(new Message("newuser", "SERVER", threads.get(i).getName(), toWhom));
+            findUserThread(toWhom).send(new Message("newuser", "SERVER", threads[i].getName(), toWhom));
         }
     }
 
     public ServerThread findUserThread(String usr) {
         for (int i = 0; i < clientCount; i++) {
-            if (threads.get(i).getName().equals(usr)) {
-                return threads.get(i);
+            if (threads[i].getName().equals(usr)) {
+                return threads[i];
             }
         }
         return null;
     }
 
+    private int findClient(int id) {
+        for (int i = 0; i < clientCount; i++) {
+            if (threads[i].getID() == id) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
     public synchronized void remove(int id) {
         int pos = findClient(id);
         ServerThread toTerminate = null;
         if (pos >= 0) {
-            toTerminate = threads.get(pos);
+            gui.getjTextArea().append("\nRemoving client thread " + id + " at " + pos);
+            toTerminate = threads[pos];
+        }
+        if (pos < clientCount - 1) {
+            for (int i = pos + 1; i < clientCount; i++) {
+                threads[i - 1] = threads[i];
+            }
         }
         clientCount--;
         toTerminate.close();
@@ -201,18 +203,18 @@ public class ServerSocketImpl implements Runnable {
     }
 
     private void addThread(Socket socket) {
-        if (clientCount < threads.size()) {
+        if (clientCount < threads.length) {
             gui.getjTextArea().append("\nClient accepted: " + socket);
-            threads.add(new ServerThread(socket, this));
-            threads.get(threads.size()).open();
-            threads.get(threads.size()).start();
+            threads[clientCount] = new ServerThread(socket, this);
+            threads[clientCount].open();
+            threads[clientCount].start();
             clientCount++;
         } else {
-            gui.getjTextArea().append("\nClient refused: maximum " + threads.size());
+            gui.getjTextArea().append("\nClient refused: maximum " + threads.length);
         }
     }
 
-    public void terminate(){
+    public void terminate() {
         running = false;
     }
 
